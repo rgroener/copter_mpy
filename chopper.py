@@ -1,3 +1,11 @@
+'''
+Copter
+A simple helicopter game to test and use TTGO T Display board.
+
+GRN Juni 2022
+
+'''
+
 from machine import Pin, Timer
 import st7789
 import tft_config
@@ -86,6 +94,8 @@ def main():
     tick_vpos=0
     tastflag=0
     liftmax=-5
+    liftmin=3
+    tick_lag=0
 
     tft.init()
     tft.fill(st7789.BLACK)
@@ -98,6 +108,7 @@ def main():
             isr_tick=0
             tick_fuel+=1
             tick_vpos+=1
+            tick_lag+=1
             #check / decrement fuel
             fuelbar(fuel)#draw fuelbar
             if fuel != 0:
@@ -105,23 +116,28 @@ def main():
                 if tick_fuel > (20-fuelburn):
                     tick_fuel=0
                     fuel-=1
-                    
+            #lag for power/lift reaction
+            #increase tick_lag value to increase lag
+            if tick_lag > 5:
+                tick_lag=0
+                if tastflag == 1:
+                    tastflag=0
+                    if lift > liftmax:
+                        lift -= 1#lift copter
+                else:
+                    if lift < liftmin:
+                         lift +=1#    
             #check / move vertical copter position
             if tick_vpos > 1:
                 tick_vpos=0
                 flag_vpos=0
-                if tastflag == 1:
-                    if lift > liftmax:
-                        lift -= 1#lift copter
-                    print(lift)
-                    
                 if vpos > 118:#copter on bottom of screen
                     vpos=118
                 elif vpos < 0:#copter at top of screen
                     vpos=0
                 draw_copter(lift, gravity)
            
-        tft.text(font,str(lift), 30, 80, st7789.YELLOW, st7789.BLACK)#print cdl_open price
+        tft.text(font,str(lift), 80, 0, st7789.YELLOW, st7789.BLACK)#print cdl_open price
    
                 
         if PR.value()==0:
@@ -132,7 +148,6 @@ def main():
 
         else:
             led.off()
-            lift = vspeedsetting
             fuelburn=fuelburnsetting
 
             
