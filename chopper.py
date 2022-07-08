@@ -25,15 +25,11 @@ fuelburnsetting=fuelburn
 fuelgradient=[0xf825,0xe0e5,0xc9c4,0xaaa4,0x9383,0x7c63,0x6523,0x4e02,0x36e2,0x1fc1,0x1fc1,0x1fc1,0x1fc1]
 isr_tick=0
 
-
-
 def ISR_T0(t):
     #introducing global variables
     global isr_tick
     isr_tick=1
-  
-        
-  
+   
 #initialise timer 0
 tim0=Timer(0)
 tim0.init(period=50,callback=ISR_T0)
@@ -54,13 +50,14 @@ def draw_copter(vspeed):
 def fuelbar(fuel):
     global fuelgradient
     step=12
-    for x in range (0,100):#check in 10 steps
-        if int(fuel/10) >= x:
-            tft.fill_rect(0,120-(x*step),10,10,fuelgradient[x])#100%
-        else:
-            tft.fill_rect(0,120-(x*step),10,10,st7789.BLACK)#100%
-        if fuel==0:
-            tft.fill_rect(0,120-(x*step),10,10,st7789.BLACK)#100%
+    if fuel==0:#draw black if fuel is zero
+        tft.fill_rect(0,20,10,110,st7789.BLACK)
+    else:
+        for x in range (0,100):#check in 10 steps
+            if int(fuel/10) >= x:
+                tft.fill_rect(0,120-(x*step),10,10,fuelgradient[x])#100%
+            else:
+                tft.fill_rect(0,120-(x*step),10,10,st7789.BLACK)
     
         
 
@@ -88,6 +85,7 @@ def main():
     tft.rotation(1)
     led.off()
     
+
     
     
     while True:
@@ -97,24 +95,33 @@ def main():
             tick_fuel+=1
             tick_vpos+=1
             #check / decrement fuel
+            fuelbar(fuel) 
             if fuel != 0:
+                fuelbar(fuel)    
                 if tick_fuel > (20-fuelburn):
                     tick_fuel=0
                     fuel-=1
+                    
             #check / move vertical copter position
             if tick_vpos > 1:
                 tick_vpos=0
                 flag_vpos=0
-                if vpos<=118:
-                    draw_copter(vspeed)
+                if vpos > 118:#copter on bottom of screen
+                    vpos=118
+                elif vpos < 0:
+                    vpos=0
+
+                    
+                print(vpos)
+                draw_copter(vspeed)
            
-             
+        tft.text(font,str(fuel), 30, 30, st7789.YELLOW, st7789.BLACK)#print cdl_open price    
                 
         if PR.value()==0:
             led.on()
             vspeed = -2#lift copter
             if fuelburn <= fuelburnmax:
-                fuelburn+=1
+                fuelburn+=5
 
         else:
             led.off()
@@ -122,7 +129,7 @@ def main():
             fuelburn=fuelburnsetting
 
             
-        fuelbar(fuel)   
+          
             
             
             
