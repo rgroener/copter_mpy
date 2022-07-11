@@ -16,7 +16,7 @@ import copter_bitmaps
 tft = tft_config.config(0, options=st7789.WRAP_V)
 
 #global variables
-fuel=100
+fuel=10
 tick_fuel=0
 fuelbarlen=100
 flag_vpos=0
@@ -31,6 +31,7 @@ fuelburn=2
 fuelburnsetting=fuelburn
 gravity=2#value > 0 falling, value < 0 lifting
 tastflag=0
+
 
 fuelgradient=[0xf825,0xe0e5,0xc9c4,0xaaa4,0x9383,0x7c63,0x6523,0x4e02,0x36e2,0x1fc1,0x1fc1,0x1fc1,0x1fc1]
 isr_tick=0
@@ -56,10 +57,16 @@ def draw_copter(lift,gravity):
     tft.bitmap(copter_bitmaps,50,vpos)
     
     
-def fuelbar(fuel):
+def fuelbar(fuel,autorot, autorotenergy):
     global fuelgradient
     step=12
-    if fuel==0:#draw black if fuel is zero
+    if autorot==1:
+        for x in range (0,100):#check in 10 steps
+            if int(autorotenergy/10) >= x:
+                tft.fill_rect(0,120-(x*step),10,10,st7789.BLUE)#100%
+            else:
+                tft.fill_rect(0,120-(x*step),10,10,st7789.BLACK)                
+    elif fuel==0:#draw black if fuel is zero
         tft.fill_rect(0,20,10,110,st7789.BLACK)
     else:
         for x in range (0,100):#check in 10 steps
@@ -88,14 +95,17 @@ def main():
     global sec
     global gravity
     
-    freefall=5
     lift=0
     fuelburnmax=10
     tick_vpos=0
     tastflag=0
     liftmax=-5
-    liftmin=3
+    liftmin=2
+    freefall=2
     tick_lag=0
+    autorot=0#if out of fuel enter autorotation status
+    autorotenergy=0
+
 
     tft.init()
     tft.fill(st7789.BLACK)
@@ -110,23 +120,35 @@ def main():
             tick_vpos+=1
             tick_lag+=1
             #check / decrement fuel
-            fuelbar(fuel)#draw fuelbar
-            if fuel != 0:
-                fuelbar(fuel)    
+            fuelbar(fuel,autorot, autorotenergy)#draw fuelbar
+            if fuel > 0:
+                fuelbar(fuel,autorot,autorotenergy)    
                 if tick_fuel > (20-fuelburn):
                     tick_fuel=0
                     fuel-=1
-            #lag for power/lift reaction
-            #increase tick_lag value to increase lag
-            if tick_lag > 5:
-                tick_lag=0
-                if tastflag == 1:
+            else:#no fuel, autorotation on 
+                autorot=1
+                if lift < freefall:
+                    lift +=1#accelerate fall
+                elif tastflag==1:#use autorotation 
                     tastflag=0
-                    if lift > liftmax:
-                        lift -= 1#lift copter
                 else:
-                    if lift < liftmin:
-                         lift +=1#    
+                    if vpos < 118:#building up energy for autorotation
+                        autorotenergy+=2
+            if autorotenergy!=0 or fuel!=0:#coper in normal operation
+                #lag for power/lift reaction
+                #increase tick_lag value to increase lag
+                print('asdfasf')
+                if tick_lag > 2:
+                    tick_lag=0
+                    if tastflag == 1:
+                        tastflag=0
+                        if lift > liftmax:
+                            lift -= 1#lift copter
+                    else:
+                        if lift < liftmin:
+                             lift +=1#
+                        
             #check / move vertical copter position
             if tick_vpos > 1:
                 tick_vpos=0
@@ -137,7 +159,7 @@ def main():
                     vpos=0
                 draw_copter(lift, gravity)
            
-        tft.text(font,str(lift), 80, 0, st7789.YELLOW, st7789.BLACK)#print cdl_open price
+        tft.text(font,str(autorotenergy), 80, 0, st7789.YELLOW, st7789.BLACK)#print cdl_open price
    
                 
         if PR.value()==0:
