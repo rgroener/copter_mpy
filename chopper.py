@@ -121,24 +121,14 @@ def main():
             tick_lag+=1
             #check / decrement fuel
             fuelbar(fuel,autorot, autorotenergy)#draw fuelbar
-            if fuel > 0:
-                fuelbar(fuel,autorot,autorotenergy)    
+         
+            if fuel >= 0 and autorot==0:#normal operation on fuel
+                autorot=0#normal operation autorotation flag off
                 if tick_fuel > (20-fuelburn):
                     tick_fuel=0
                     fuel-=1
-            else:#no fuel, autorotation on 
-                autorot=1
-                if lift < freefall:
-                    lift +=1#accelerate fall
-                elif tastflag==1:#use autorotation 
-                    tastflag=0
-                else:
-                    if vpos < 118:#building up energy for autorotation
-                        autorotenergy+=2
-            if autorotenergy!=0 or fuel!=0:#coper in normal operation
                 #lag for power/lift reaction
                 #increase tick_lag value to increase lag
-                print('asdfasf')
                 if tick_lag > 2:
                     tick_lag=0
                     if tastflag == 1:
@@ -148,7 +138,30 @@ def main():
                     else:
                         if lift < liftmin:
                              lift +=1#
-                        
+            else:#no fuel, autorotation on 
+                autorot=1
+                #lag for power/lift reaction
+                #increase tick_lag value to increase lag
+                if tick_lag > 4:
+                    tick_lag=0
+                    if tastflag == 1:
+                        tastflag=0
+                        if autorotenergy>0:
+                            autorotenergy-=8
+                        if lift > liftmax and autorotenergy > 0:
+                            lift -= 1#lift copter
+                        else:
+                            if lift < liftmin:
+                                lift +=1#accelerate falling
+                        print(lift)   
+                    else:
+                        if lift < liftmin:
+                            lift +=1#accelerate falling
+                        if vpos < 118:#building up energy for autorotation
+                            autorotenergy+=5
+
+                
+                
             #check / move vertical copter position
             if tick_vpos > 1:
                 tick_vpos=0
